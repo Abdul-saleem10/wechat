@@ -32,6 +32,26 @@ export const chatService = {
       unreadCount: participants.reduce((acc, p) => ({ ...acc, [p]: 0 }), {} as Record<string, number>),
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
+      isGroup: false,
+      groupName: '',
+      groupAvatar: '',
+      admin: '',
+    };
+    const docRef = await addDoc(collection(db, 'chats'), chatData);
+    return docRef.id;
+  },
+
+  async createGroup(name: string, participants: string[], admin: string, avatar?: string): Promise<string> {
+    const chatData: Omit<Chat, 'id'> = {
+      participants,
+      lastMessage: null,
+      unreadCount: participants.reduce((acc, p) => ({ ...acc, [p]: 0 }), {} as Record<string, number>),
+      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      isGroup: true,
+      groupName: name,
+      groupAvatar: avatar || '',
+      admin,
     };
     const docRef = await addDoc(collection(db, 'chats'), chatData);
     return docRef.id;
@@ -49,19 +69,33 @@ export const chatService = {
     return null;
   },
 
-  listenToChats(userId: string, callback: (chats: Chat[]) => void) {
+  listenToChats(userId: string, callback: (chats: Chat[]) => void, onError?: (err: Error) => void) {
     const q = query(
       collection(db, 'chats'),
       where('participants', 'array-contains', userId),
       orderBy('updatedAt', 'desc')
     );
-    return onSnapshot(q, (snapshot) => {
-      const chats: Chat[] = [];
-      snapshot.forEach((doc) => {
-        chats.push({ id: doc.id, ...doc.data() } as Chat);
-      });
-      callback(chats);
-    });
+    return onSnapshot(q,
+      (snapshot) => {
+        const chats: Chat[] = [];
+        snapshot.forEach((doc) => {
+          const data = { id: doc.id, ...doc.data() } as Chat;
+          chats.push(data);
+        });
+        console.log(`[ChatService] listenToChats returned ${chats.length} chats:`, chats.map(c => ({ id: c.id, isGroup: c.isGroup, participants: c.participants, groupName: c.groupName })));
+        callback(chats);
+      },
+      (error) => {
+        console.error('Chat listing query failed:', error);
+        if (error.message?.includes('index')) {
+          console.warn(
+            'Missing Firestore composite index. Create it at:',
+            'https://console.firebase.google.com/project/_/firestore/indexes'
+          );
+        }
+        onError?.(error);
+      }
+    );
   },
 
   async sendMessage(chatId: string, message: Omit<Message, 'id'>): Promise<void> {
@@ -175,6 +209,7 @@ export const chatService = {
   },
 
   async searchUsers(searchTerm: string): Promise<User[]> {
+    console.log(searchTerm)
     const q = query(collection(db, 'users'));
     const snapshot = await getDocs(q);
     const users: User[] = [];

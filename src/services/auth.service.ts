@@ -72,10 +72,12 @@ export const authService = {
 
   async logout(): Promise<void> {
     requireAuth();
-    const user = auth!.currentUser;
-    if (user) {
-      await setDoc(doc(db!, 'users', user.uid), { online: false, lastSeen: serverTimestamp() }, { merge: true });
-    }
+    try {
+      const user = auth!.currentUser;
+      if (user) {
+        await setDoc(doc(db!, 'users', user.uid), { online: false, lastSeen: serverTimestamp() }, { merge: true });
+      }
+    } catch {}
     await signOut(auth!);
   },
 

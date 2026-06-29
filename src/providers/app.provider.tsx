@@ -6,6 +6,7 @@ import { useChatStore } from '@/store/chat.store';
 import { authService } from '@/services/auth.service';
 import { chatService } from '@/services/chat.service';
 import { User, Chat } from '@/types';
+import toast from 'react-hot-toast';
 
 interface AppContextType {
   refreshChats: () => void;
@@ -14,60 +15,83 @@ interface AppContextType {
 const AppContext = createContext<AppContextType>({ refreshChats: () => {} });
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const uid = useAuthStore((s) => s.user?.uid);
   const { setChats, setChatUsers } = useChatStore();
-  const previousUserRef = useRef<string | null>(null);
   const unsubscribeChatsRef = useRef<(() => void) | null>(null);
+  const previousUidRef = useRef<string | null | undefined>(null);
+
+  console.log('[AppProvider] render, uid:', uid);
 
   useEffect(() => {
-    const currentUid = useAuthStore.getState().user?.uid;
-    if (!currentUid) {
+    console.log('[AppProvider] effect run, uid:', uid, 'previousUidRef:', previousUidRef.current);
+
+    if (!uid) {
+      console.log('[AppProvider] no uid, clearing chats');
       if (unsubscribeChatsRef.current) {
         unsubscribeChatsRef.current();
         unsubscribeChatsRef.current = null;
       }
       setChats([]);
-      previousUserRef.current = null;
+      previousUidRef.current = undefined;
       return;
     }
 
-    if (currentUid !== previousUserRef.current) {
-      if (unsubscribeChatsRef.current) {
-        unsubscribeChatsRef.current();
-      }
-      previousUserRef.current = currentUid;
+    if (uid === previousUidRef.current) {
+      console.log('[AppProvider] uid unchanged, skipping');
+      return;
+    }
+    previousUidRef.current = uid;
 
-      const unsubChats = chatService.listenToChats(currentUid, async (chats: Chat[]) => {
+    if (unsubscribeChatsRef.current) {
+      console.log('[AppProvider] cleaning up old listener');
+      unsubscribeChatsRef.current();
+    }
+
+    console.log('[AppProvider] setting up listener for uid:', uid);
+    const unsubChats = chatService.listenToChats(
+      uid,
+      async (chats: Chat[]) => {
+        console.log('[AppProvider] got chats:', chats.length);
         setChats(chats);
         const userIds = new Set<string>();
-        chats.forEach((c) => c.participants.forEach((p) => { if (p !== currentUid) userIds.add(p); }));
+        chats.forEach((c) => c.participants.forEach((p) => { if (p !== uid) userIds.add(p); }));
         const userMap: Record<string, User> = {};
-        for (const uid of userIds) {
+        for (const otherUid of userIds) {
           try {
-            const userData = await authService.getUserData(uid);
-            if (userData) userMap[uid] = userData;
+            const userData = await authService.getUserData(otherUid);
+            if (userData) userMap[otherUid] = userData;
           } catch {}
         }
         setChatUsers(userMap);
-      });
-      unsubscribeChatsRef.current = unsubChats;
+      },
+      (error) => {
+        console.error('[AppProvider] listenToChats error:', error);
+        toast.error(
+          'Chats failed to load. Check console for Firestore index instructions.',
+          { duration: 6000 }
+        );
+      }
+    );
+    unsubscribeChatsRef.current = unsubChats;
 
-      return () => {
-        unsubChats();
-        unsubscribeChatsRef.current = null;
-      };
-    }
-  }, [useAuthStore.getState().user?.uid, setChats, setChatUsers]);
+    return () => {
+      console.log('[AppProvider] cleanup');
+      unsubChats();
+      unsubscribeChatsRef.current = null;
+      previousUidRef.current = null;
+    };
+  }, [uid, setChats, setChatUsers]);
 
   const refreshChats = useCallback(() => {
-    const uid = useAuthStore.getState().user?.uid;
-    if (uid && unsubscribeChatsRef.current) {
+    if (!uid) return;
+    if (unsubscribeChatsRef.current) {
       unsubscribeChatsRef.current();
-      const unsub = chatService.listenToChats(uid, async (chats: Chat[]) => {
-        setChats(chats);
-      });
-      unsubscribeChatsRef.current = unsub;
     }
-  }, [setChats]);
+    const unsub = chatService.listenToChats(uid, async (chats: Chat[]) => {
+      setChats(chats);
+    });
+    unsubscribeChatsRef.current = unsub;
+  }, [uid, setChats]);
 
   return <AppContext.Provider value={{ refreshChats }}>{children}</AppContext.Provider>;
 }

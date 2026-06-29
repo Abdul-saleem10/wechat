@@ -67,6 +67,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
               disabled={loading}
+              autoComplete="email"
             />
           </div>
           <div className="relative">
@@ -78,6 +79,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10"
               disabled={loading}
+              autoComplete="current-password"
             />
           </div>
           <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>

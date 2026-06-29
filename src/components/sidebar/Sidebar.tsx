@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuthStore, useChatStore, useUIStore } from '@/store';
 import { Chat, User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,11 +24,13 @@ import {
   PenLine,
   ChevronLeft,
   UserPlus,
+  Users,
 } from 'lucide-react';
 import { useTheme } from '@/providers/theme.provider';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GroupCreateModal } from './GroupCreateModal';
 
 interface SidebarProps {
   onMobileClose?: () => void;
@@ -37,19 +39,28 @@ interface SidebarProps {
 export function Sidebar({ onMobileClose }: SidebarProps) {
   const { user } = useAuthStore();
   const { chats, chatUsers, setSelectedChatId, selectedChatId, markChatRead } = useChatStore();
-  const { searchQuery, setSearchQuery, isMobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
+  console.log('[Sidebar] chats:', chats?.length, chats?.map(c => ({ id: c.id, isGroup: c.isGroup, name: c.isGroup ? c.groupName : 'DM' })));
+  const { isMobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [searchQuery, setSearchQuery ] = useState("")
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showGroupCreate, setShowGroupCreate] = useState(false);
 
   const filteredChats = useMemo(() => {
     if (!debouncedSearch) return chats;
     const term = debouncedSearch.toLowerCase();
     return chats.filter((chat) => {
+      if (chat.isGroup) {
+        return (
+          chat.groupName?.toLowerCase().includes(term) ||
+          chat.lastMessage?.text?.toLowerCase().includes(term)
+        );
+      }
       const otherUid = chat.participants.find((p) => p !== user?.uid);
       const otherUser = otherUid ? chatUsers[otherUid] : null;
       return (
@@ -59,21 +70,27 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
     });
   }, [chats, debouncedSearch, user?.uid, chatUsers]);
 
-  const handleSearchUsers = useCallback(async (term: string) => {
-    if (!term.trim()) {
+  useEffect(() => {
+    if (!debouncedSearch.trim()) {
       setSearchResults([]);
       return;
     }
+    let cancelled = false;
     setIsSearchingUsers(true);
-    try {
-      const results = await chatService.searchUsers(term);
-      setSearchResults(results.filter((u) => u.uid !== user?.uid));
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setIsSearchingUsers(false);
-    }
-  }, [user?.uid]);
+    chatService.searchUsers(debouncedSearch).then((results) => {
+      if (!cancelled) {
+        setSearchResults(results.filter((u) => u.uid !== user?.uid));
+        setIsSearchingUsers(false);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setSearchResults([]);
+        setIsSearchingUsers(false);
+        toast.error('Search failed — check Firestore rules');
+      }
+    });
+    return () => { cancelled = true; };
+  }, [debouncedSearch, user?.uid]);
 
   const handleStartChat = useCallback(async (otherUserId: string) => {
     if (!user) return;
@@ -99,14 +116,12 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
   const handleLogout = useCallback(async () => {
     try {
       await authService.logout();
-      router.replace('/login');
-    } catch {
-      toast.error('Logout failed');
-    }
-  }, [router]);
+    } catch {}
+    window.location.href = '/login';
+  }, []);
 
   const getOtherUser = (chat: Chat): User | null => {
-    if (!user) return null;
+    if (chat.isGroup || !user) return null;
     const otherUid = chat.participants.find((p) => p !== user.uid);
     return otherUid ? chatUsers[otherUid] || null : null;
   };
@@ -140,6 +155,15 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowGroupCreate(true)}
+            className="text-muted-foreground"
+            title="New Group"
+          >
+            <Users className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -178,6 +202,14 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
               <h3 className="font-semibold text-lg">{user.name}</h3>
               <p className="text-sm text-muted-foreground">{user.email}</p>
               {user.bio && <p className="text-sm mt-2 text-muted-foreground">{user.bio}</p>}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleLogout}
+                className="mt-4 w-full gap-2"
+              >
+                <LogOut className="h-4 w-4" /> Sign Out
+              </Button>
             </div>
           </motion.div>
         )}
@@ -190,10 +222,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
           <Input
             placeholder="Search or start new chat"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              handleSearchUsers(e.target.value);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-muted/50 border-0"
           />
           {searchQuery && (
@@ -262,6 +291,12 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
               filteredChats.map((chat) => {
                 const otherUser = getOtherUser(chat);
                 const unread = getUnreadCount(chat);
+                const isGroup = chat.isGroup;
+                const displayName = isGroup ? chat.groupName : otherUser?.name || 'Unknown User';
+                const displayAvatar = isGroup ? chat.groupAvatar : otherUser?.avatar;
+                const initial = isGroup
+                  ? chat.groupName?.charAt(0).toUpperCase() || 'G'
+                  : otherUser?.name?.charAt(0).toUpperCase() || '?';
                 return (
                   <motion.button
                     key={chat.id}
@@ -278,22 +313,27 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                   >
                     <div className="relative">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={otherUser?.avatar} />
-                        <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                          {otherUser?.name?.charAt(0).toUpperCase() || '?'}
+                        <AvatarImage src={displayAvatar} />
+                        <AvatarFallback className={cn(
+                          'text-emerald-700 dark:text-emerald-300',
+                          isGroup ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-emerald-100 dark:bg-emerald-900'
+                        )}>
+                          {initial}
                         </AvatarFallback>
                       </Avatar>
-                      <span
-                        className={cn(
-                          'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background',
-                          otherUser?.online ? 'bg-emerald-500' : 'bg-gray-400'
-                        )}
-                      />
+                      {!isGroup && (
+                        <span
+                          className={cn(
+                            'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background',
+                            otherUser?.online ? 'bg-emerald-500' : 'bg-gray-400'
+                          )}
+                        />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold truncate">
-                          {otherUser?.name || 'Unknown User'}
+                          {displayName}
                         </p>
                         {chat.lastMessage && (
                           <span className="text-xs text-muted-foreground shrink-0 ml-2">
@@ -303,7 +343,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
                         <p className="text-xs text-muted-foreground truncate flex-1">
-                          {chat.lastMessage?.text || 'Start a conversation'}
+                          {chat.lastMessage?.text || (isGroup ? 'Group created' : 'Start a conversation')}
                         </p>
                         {unread > 0 && (
                           <Badge className="h-5 min-w-5 rounded-full bg-emerald-500 hover:bg-emerald-500 text-white text-xs flex items-center justify-center shrink-0">
@@ -324,25 +364,39 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
 
   if (isMobile) {
     return (
-      <AnimatePresence>
-        {isMobileSidebarOpen && (
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 w-full max-w-sm"
-          >
-            <div className="absolute inset-0 bg-background">{sidebarContent}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <>
+        <AnimatePresence>
+          {isMobileSidebarOpen && (
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-0 z-50 w-full max-w-sm"
+            >
+              <div className="absolute inset-0 bg-background">{sidebarContent}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showGroupCreate && (
+            <GroupCreateModal onClose={() => setShowGroupCreate(false)} />
+          )}
+        </AnimatePresence>
+      </>
     );
   }
 
   return (
-    <div className="w-full max-w-[360px] shrink-0 hidden md:block">
-      {sidebarContent}
-    </div>
+    <>
+      <div className="w-full max-w-[360px] shrink-0 hidden md:block">
+        {sidebarContent}
+      </div>
+      <AnimatePresence>
+        {showGroupCreate && (
+          <GroupCreateModal onClose={() => setShowGroupCreate(false)} />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

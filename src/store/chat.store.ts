@@ -13,6 +13,7 @@ interface ChatState {
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
   setChatUsers: (users: Record<string, User>) => void;
+  updateChatUser: (uid: string, data: Partial<User>) => void;
   setTypingUsers: (users: string[]) => void;
   setSelectedChatId: (id: string | null) => void;
   updateChatLastMessage: (chatId: string, message: Message) => void;
@@ -32,6 +33,13 @@ export const useChatStore = create<ChatState>((set) => ({
   setMessages: (messages) => set({ messages }),
   addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
   setChatUsers: (chatUsers) => set({ chatUsers }),
+  updateChatUser: (uid, data) =>
+    set((state) => ({
+      chatUsers: {
+        ...state.chatUsers,
+        [uid]: { ...(state.chatUsers[uid] || {}), ...data } as User,
+      },
+    })),
   setTypingUsers: (typingUsers) => set({ typingUsers }),
   setSelectedChatId: (selectedChatId) => set({ selectedChatId }),
   updateChatLastMessage: (chatId, message) =>

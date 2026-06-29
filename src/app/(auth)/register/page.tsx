@@ -71,6 +71,7 @@ export default function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               className="pl-10"
               disabled={loading}
+              autoComplete="name"
             />
           </div>
           <div className="relative">
@@ -82,6 +83,7 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10"
               disabled={loading}
+              autoComplete="email"
             />
           </div>
           <div className="relative">
@@ -93,6 +95,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10"
               disabled={loading}
+              autoComplete="new-password"
             />
           </div>
           <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>

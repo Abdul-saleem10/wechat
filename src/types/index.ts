@@ -20,6 +20,10 @@ export interface Chat {
   unreadCount: Record<string, number>;
   updatedAt: TimestampValue | ServerTimestamp;
   createdAt: TimestampValue | ServerTimestamp;
+  isGroup?: boolean;
+  groupName?: string;
+  groupAvatar?: string;
+  admin?: string;
 }
 
 export interface Message {

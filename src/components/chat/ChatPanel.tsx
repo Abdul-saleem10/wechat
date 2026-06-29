@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuthStore, useChatStore, useUIStore } from '@/store';
 import { Message, User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { chatService } from '@/services/chat.service';
+import { authService } from '@/services/auth.service';
 import { storageService } from '@/services/storage.service';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { formatMessageTime, formatFileSize, cn, timestampToMillis } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -39,7 +42,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ chatId }: ChatPanelProps) {
   const { user } = useAuthStore();
-  const { messages, chatUsers, setMessages, setTypingUsers, updateChatLastMessage } = useChatStore();
+  const { chats, messages, chatUsers, setMessages, setTypingUsers, updateChatLastMessage, updateChatUser } = useChatStore();
   const { isUploading, uploadProgress, setIsUploading, setUploadProgress } = useUIStore();
   const [text, setText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
@@ -54,8 +57,12 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const router = useRouter();
 
-  const otherUserId = chatUsers ? Object.keys(chatUsers).find((uid) => uid !== user?.uid) : null;
-  const otherUser = otherUserId ? chatUsers[otherUserId] : null;
+  const otherUser = useMemo(() => {
+    if (!user) return null;
+    const chat = chats.find((c) => c.id === chatId);
+    const otherUid = chat?.participants.find((p) => p !== user.uid);
+    return otherUid && chatUsers[otherUid] ? chatUsers[otherUid] : null;
+  }, [chats, chatId, user, chatUsers]);
 
   useEffect(() => {
     if (!chatId) return;
@@ -68,6 +75,40 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
   useEffect(() => {
     if (!chatId || !user) return;
     chatService.markAsRead(chatId, user.uid);
+  }, [chatId, user]);
+
+  useEffect(() => {
+    if (!chatId || !user) return;
+
+    let cancelled = false;
+    let unsubStatus: (() => void) | null = null;
+
+    (async () => {
+      const chat = chats.find((c) => c.id === chatId);
+      let otherUid = chat?.participants.find((p) => p !== user.uid);
+
+      if (!otherUid) {
+        const chatSnap = await getDoc(doc(db, 'chats', chatId));
+        if (!chatSnap.exists()) return;
+        otherUid = (chatSnap.data().participants as string[]).find((p: string) => p !== user.uid);
+      }
+      if (!otherUid) return;
+
+      if (!chatUsers[otherUid]) {
+        const userData = await authService.getUserData(otherUid);
+        if (userData) updateChatUser(otherUid, userData);
+      }
+
+      if (cancelled) return;
+      unsubStatus = chatService.listenToUserStatus(otherUid, (online, lastSeen) => {
+        updateChatUser(otherUid!, { online, lastSeen: lastSeen ?? undefined } as any);
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubStatus?.();
+    };
   }, [chatId, user]);
 
   useEffect(() => {
@@ -193,6 +234,9 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
     );
   }
 
+  const chat = chats.find((c) => c.id === chatId);
+  const isGroup = chat?.isGroup;
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#efeae2] dark:bg-[#0b141a]">
       {/* Chat Header */}
@@ -204,25 +248,42 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
             </Button>
           )}
           <Avatar className="h-9 w-9 ring-2 ring-emerald-500/20">
-            <AvatarImage src={otherUser?.avatar} />
-            <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-sm">
-              {otherUser?.name?.charAt(0).toUpperCase() || '?'}
+            <AvatarImage src={isGroup ? chat?.groupAvatar : otherUser?.avatar} />
+            <AvatarFallback className={cn(
+              'text-sm',
+              isGroup
+                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
+            )}>
+              {(isGroup
+                ? chat?.groupName?.charAt(0).toUpperCase()
+                : otherUser?.name?.charAt(0).toUpperCase()
+              ) || '?'}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-sm">{otherUser?.name || 'Loading...'}</p>
+            <p className="font-semibold text-sm">{isGroup ? chat?.groupName : (otherUser?.name || 'Loading...')}</p>
             <p className="text-xs text-muted-foreground">
-              {otherUser?.online ? 'Online' : otherUser?.lastSeen ? `Last seen ${formatMessageTime(otherUser.lastSeen)}` : 'Offline'}
+              {isGroup
+                ? `${chat?.participants.length} participants`
+                : otherUser?.online
+                  ? 'Online'
+                  : otherUser?.lastSeen
+                    ? `Last seen ${formatMessageTime(otherUser.lastSeen)}`
+                    : 'Offline'
+              }
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Phone className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Video className="h-5 w-5" />
-          </Button>
+          {!isGroup && (<>
+            <Button variant="ghost" size="icon" className="text-muted-foreground">
+              <Phone className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-muted-foreground">
+              <Video className="h-5 w-5" />
+            </Button>
+          </>)}
           <Button variant="ghost" size="icon" className="text-muted-foreground">
             <MoreVertical className="h-5 w-5" />
           </Button>
