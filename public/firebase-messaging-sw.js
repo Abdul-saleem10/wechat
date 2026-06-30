@@ -10,34 +10,68 @@ firebase.initializeApp({
   appId: self.FIREBASE_APP_ID,
 });
 
-const messaging = firebase.messaging();
+var messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  const { notification, data } = payload;
-  const title = notification?.title || 'New message';
-  const body = notification?.body || '';
-  const icon = '/favicon.ico';
+messaging.onBackgroundMessage(function (payload) {
+  var notification = payload.notification;
+  var data = payload.data;
+  var title = (notification && notification.title) || 'New message';
+  var body = (notification && notification.body) || '';
+  var icon = '/icon-192.svg';
 
   self.registration.showNotification(title, {
-    body,
-    icon,
+    body: body,
+    icon: icon,
     badge: icon,
     data: data || {},
     vibrate: [200, 100, 200],
   });
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const urlToOpen = new URL('/chat', self.location.origin);
+  var urlToOpen = new URL('/chat', self.location.origin);
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
         if (client.url === urlToOpen.href && 'focus' in client) {
           return client.focus();
         }
       }
       return clients.openWindow(urlToOpen);
+    })
+  );
+});
+
+var CACHE_NAME = 'wechat-v1';
+
+self.addEventListener('install', function (event) {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function (event) {
+  event.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(
+        keys.filter(function (k) { return k !== CACHE_NAME; }).map(function (k) { return caches.delete(k); })
+      );
+    })
+  );
+  event.waitUntil(clients.claim());
+});
+
+self.addEventListener('fetch', function (event) {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    fetch(event.request).then(function (response) {
+      var copy = response.clone();
+      if (response.ok && response.type === 'basic') {
+        caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
+      }
+      return response;
+    }).catch(function () {
+      return caches.match(event.request);
     })
   );
 });

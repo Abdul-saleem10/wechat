@@ -36,7 +36,7 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
   }, [search]);
 
   return (
-    <div className="bg-white dark:bg-[#2a3942] rounded-xl shadow-2xl border w-[320px]">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border w-[320px]">
       <div className="flex items-center justify-between p-2 border-b dark:border-white/10">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />

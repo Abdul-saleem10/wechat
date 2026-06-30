@@ -142,9 +142,9 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
             </Button>
           )}
           <button onClick={() => setShowProfile(!showProfile)}>
-            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-emerald-500/20">
+            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-gray-400/30">
               <AvatarImage src={user?.avatar} />
-              <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+              <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                 {user?.name?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -193,9 +193,9 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
             className="border-b overflow-hidden"
           >
             <div className="p-4 text-center">
-              <Avatar className="h-20 w-20 mx-auto mb-3 ring-4 ring-emerald-500/20">
+              <Avatar className="h-20 w-20 mx-auto mb-3 ring-4 ring-gray-400/30">
                 <AvatarImage src={user.avatar} />
-                <AvatarFallback className="text-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                <AvatarFallback className="text-2xl bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                   {user.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -254,7 +254,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
             >
               <Avatar className="h-10 w-10">
                 <AvatarImage src={searchUser.avatar} />
-                <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                   {searchUser.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -315,8 +315,8 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                       <Avatar className="h-12 w-12">
                         <AvatarImage src={displayAvatar} />
                         <AvatarFallback className={cn(
-                          'text-emerald-700 dark:text-emerald-300',
-                          isGroup ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-emerald-100 dark:bg-emerald-900'
+                          'text-gray-800 dark:text-gray-300',
+                          isGroup ? 'bg-gray-200 dark:bg-gray-800/50' : 'bg-gray-200 dark:bg-gray-800'
                         )}>
                           {initial}
                         </AvatarFallback>
@@ -325,7 +325,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                         <span
                           className={cn(
                             'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background',
-                            otherUser?.online ? 'bg-emerald-500' : 'bg-gray-400'
+                            otherUser?.online ? 'bg-gray-600' : 'bg-gray-400'
                           )}
                         />
                       )}
@@ -346,7 +346,7 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
                           {chat.lastMessage?.text || (isGroup ? 'Group created' : 'Start a conversation')}
                         </p>
                         {unread > 0 && (
-                          <Badge className="h-5 min-w-5 rounded-full bg-emerald-500 hover:bg-emerald-500 text-white text-xs flex items-center justify-center shrink-0">
+                          <Badge className="h-5 min-w-5 rounded-full bg-gray-600 hover:bg-gray-600 text-white text-xs flex items-center justify-center shrink-0">
                             {unread}
                           </Badge>
                         )}

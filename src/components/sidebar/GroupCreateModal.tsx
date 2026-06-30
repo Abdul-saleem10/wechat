@@ -97,7 +97,7 @@ export function GroupCreateModal({ onClose }: GroupCreateModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-emerald-500" />
+            <Users className="h-5 w-5 text-gray-600" />
             <h2 className="font-semibold text-lg">
               {step === 'select' ? 'Add Participants' : 'Group Name'}
             </h2>
@@ -129,7 +129,7 @@ export function GroupCreateModal({ onClose }: GroupCreateModalProps) {
                 {selectedUsers.map((u) => (
                   <span
                     key={u.uid}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-200 dark:bg-gray-800/50 text-gray-800 dark:text-gray-300 rounded-full text-xs font-medium"
                   >
                     {u.name}
                     <button onClick={() => toggleUser(u)}>
@@ -156,7 +156,7 @@ export function GroupCreateModal({ onClose }: GroupCreateModalProps) {
                   >
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={u.avatar} />
-                      <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                      <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                         {u.name?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -167,7 +167,7 @@ export function GroupCreateModal({ onClose }: GroupCreateModalProps) {
                     <div className={cn(
                       'h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors',
                       isSelected
-                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        ? 'bg-gray-600 border-gray-600 text-white'
                         : 'border-muted-foreground/40'
                     )}>
                       {isSelected && <Check className="h-3 w-3" />}
@@ -206,7 +206,7 @@ export function GroupCreateModal({ onClose }: GroupCreateModalProps) {
                 {selectedUsers.slice(0, 5).map((u) => (
                   <Avatar key={u.uid} className="h-12 w-12 ring-2 ring-background">
                     <AvatarImage src={u.avatar} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-sm">
+                    <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300 text-sm">
                       {u.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

@@ -54,8 +54,8 @@ export default function RegisterPage() {
     <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
       <CardHeader className="text-center space-y-2">
         <div className="flex justify-center mb-2">
-          <div className="p-3 rounded-full bg-emerald-100">
-            <MessageCircle className="h-8 w-8 text-emerald-600" />
+          <div className="p-3 rounded-full bg-gray-200">
+            <MessageCircle className="h-8 w-8 text-gray-700" />
           </div>
         </div>
         <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
@@ -98,7 +98,7 @@ export default function RegisterPage() {
               autoComplete="new-password"
             />
           </div>
-          <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
+          <Button type="submit" className="w-full bg-gray-700 hover:bg-gray-800" disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Sign Up
           </Button>
@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{' '}
-          <Link href="/login" className="text-emerald-600 hover:underline font-medium">
+          <Link href="/login" className="text-gray-700 hover:underline font-medium">
             Sign in
           </Link>
         </p>

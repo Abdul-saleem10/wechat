@@ -238,22 +238,22 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
   const isGroup = chat?.isGroup;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#efeae2] dark:bg-[#0b141a]">
+    <div className="flex-1 flex flex-col h-full bg-gray-100 dark:bg-gray-950">
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#f0f2f5] dark:bg-[#202c33] border-b border-black/5 dark:border-white/5">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-800 border-b border-black/5 dark:border-white/5">
         <div className="flex items-center gap-3">
           {isMobile && (
             <Button variant="ghost" size="icon" onClick={() => router.push('/chat')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <Avatar className="h-9 w-9 ring-2 ring-emerald-500/20">
+          <Avatar className="h-9 w-9 ring-2 ring-gray-400/30">
             <AvatarImage src={isGroup ? chat?.groupAvatar : otherUser?.avatar} />
             <AvatarFallback className={cn(
               'text-sm',
               isGroup
-                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
+                ? 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                : 'bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
             )}>
               {(isGroup
                 ? chat?.groupName?.charAt(0).toUpperCase()
@@ -327,21 +327,21 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
 
       {/* Typing Indicator */}
       {useChatStore.getState().typingUsers.length > 0 && (
-        <div className="px-4 py-1 text-xs text-emerald-600 dark:text-emerald-400 italic">
+        <div className="px-4 py-1 text-xs text-gray-700 dark:text-gray-400 italic">
           {otherUser?.name} is typing...
         </div>
       )}
 
       {/* Upload Progress */}
       {isUploading && (
-        <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30">
-          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+        <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800/30">
+          <div className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-300">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>Uploading... {Math.round(uploadProgress)}%</span>
           </div>
-          <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-1 mt-1">
+          <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-1 mt-1">
             <div
-              className="bg-emerald-500 h-1 rounded-full transition-all duration-300"
+              className="bg-gray-600 h-1 rounded-full transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
@@ -358,10 +358,10 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
       )}
 
       {/* Message Input */}
-      <div className="px-4 py-2 bg-[#f0f2f5] dark:bg-[#202c33]">
+      <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800">
         <div className="flex items-end gap-2">
           <div className="relative flex-1">
-            <div className="flex items-center bg-white dark:bg-[#2a3942] rounded-lg px-3 py-1.5">
+            <div className="flex items-center bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5">
               <Button
                 variant="ghost"
                 size="icon"
@@ -401,13 +401,13 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
             {/* Attachment Menu */}
             {showAttach && (
               <div className="absolute bottom-full left-0 mb-2 z-50">
-                <div className="bg-white dark:bg-[#2a3942] rounded-xl shadow-xl border p-2 grid grid-cols-4 gap-2">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border p-2 grid grid-cols-4 gap-2">
                   <button
                     onClick={() => imageInputRef.current?.click()}
                     className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/50">
-                      <ImageIcon className="h-5 w-5 text-purple-600" />
+                    <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-800/50">
+                      <ImageIcon className="h-5 w-5 text-gray-700" />
                     </div>
                     <span className="text-xs">Photos</span>
                   </button>
@@ -415,8 +415,8 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
                     onClick={() => videoInputRef.current?.click()}
                     className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/50">
-                      <Video className="h-5 w-5 text-blue-600" />
+                    <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-800/50">
+                      <Video className="h-5 w-5 text-gray-700" />
                     </div>
                     <span className="text-xs">Videos</span>
                   </button>
@@ -424,8 +424,8 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
                     onClick={() => fileInputRef.current?.click()}
                     className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/50">
-                      <File className="h-5 w-5 text-orange-600" />
+                    <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-800/50">
+                      <File className="h-5 w-5 text-gray-700" />
                     </div>
                     <span className="text-xs">Files</span>
                   </button>
@@ -439,7 +439,7 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
             <Button
               onClick={handleSend}
               size="icon"
-              className="h-10 w-10 rounded-full bg-emerald-500 hover:bg-emerald-600 shrink-0"
+              className="h-10 w-10 rounded-full bg-gray-600 hover:bg-gray-700 shrink-0"
             >
               <Send className="h-5 w-5 text-white" />
             </Button>

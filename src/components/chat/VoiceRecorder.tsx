@@ -68,12 +68,12 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
           <motion.div
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
-            className="w-2 h-2 rounded-full bg-red-500"
+            className="w-2 h-2 rounded-full bg-gray-600"
           />
-          <span className="text-sm font-medium text-red-500">{formatDuration(duration)}</span>
+          <span className="text-sm font-medium text-gray-600">{formatDuration(duration)}</span>
           <button
             onClick={stopRecording}
-            className="p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+            className="p-1.5 rounded-full bg-gray-600 text-white hover:bg-gray-700 transition-colors"
           >
             <Square className="h-4 w-4" />
           </button>
@@ -83,8 +83,8 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
           onClick={startRecording}
           className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-muted/50 transition-colors"
         >
-          <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/50">
-            <Mic className="h-5 w-5 text-red-600" />
+          <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-800/50">
+            <Mic className="h-5 w-5 text-gray-700" />
           </div>
           <span className="text-xs">Voice</span>
         </button>

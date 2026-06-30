@@ -73,8 +73,8 @@ export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, oth
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-3 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
           >
-            <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-              <File className="h-5 w-5 text-emerald-600" />
+            <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-800/50">
+              <File className="h-5 w-5 text-gray-700" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{message.mediaName || 'Document'}</p>
@@ -88,12 +88,12 @@ export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, oth
       case 'voice':
         return (
           <div className="flex items-center gap-3 min-w-[200px]">
-            <button className="p-2 rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">
+            <button className="p-2 rounded-full bg-gray-600 text-white hover:bg-gray-700 transition-colors">
               <Play className="h-4 w-4" />
             </button>
             <div className="flex-1">
               <div className="h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-0 bg-emerald-500 rounded-full" />
+                <div className="h-full w-0 bg-gray-600 rounded-full" />
               </div>
             </div>
             <span className="text-xs text-muted-foreground">
@@ -129,8 +129,8 @@ export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, oth
         className={cn(
           'max-w-[70%] px-3 py-2 rounded-lg shadow-sm',
           isOwn
-            ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-sm'
-            : 'bg-white dark:bg-[#202c33] rounded-tl-sm'
+            ? 'bg-gray-200 dark:bg-gray-700 rounded-tr-sm'
+            : 'bg-white dark:bg-gray-800 rounded-tl-sm'
         )}
       >
         {isOwn && message.type === 'text' && <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>}
@@ -149,7 +149,7 @@ export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, oth
             ) : message.status === 'delivered' ? (
               <CheckCheck className="h-3 w-3 text-muted-foreground/50" />
             ) : (
-              <CheckCheck className="h-3 w-3 text-blue-500" />
+              <CheckCheck className="h-3 w-3 text-gray-600" />
             )
           )}
         </div>

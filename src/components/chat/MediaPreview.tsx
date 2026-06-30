@@ -14,7 +14,7 @@ export function MediaPreview({ file, preview, onClear }: MediaPreviewProps) {
   const isVideo = file.type.startsWith('video/');
 
   return (
-    <div className="px-4 py-2 bg-[#f0f2f5] dark:bg-[#202c33] border-t border-black/5 dark:border-white/5">
+    <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-t border-black/5 dark:border-white/5">
       <div className="relative inline-block">
         <Button
           variant="ghost"
