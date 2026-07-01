@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Message } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatMessageTime, formatFileSize, cn } from '@/lib/utils';
-import { Check, CheckCheck, File, Play, Image, X } from 'lucide-react';
+import { Check, CheckCheck, File, Play, Image, X, Download, Share2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 interface MessageBubbleProps {
   message: Message;
@@ -17,6 +18,38 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, otherUserName }: MessageBubbleProps) {
   const [showPreview, setShowPreview] = useState(false);
+
+  const handleShare = useCallback(async (url: string, name?: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: name || 'Image', text: name || 'Shared from WeChat', url });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard');
+      } catch {
+        toast.error('Failed to copy link');
+      }
+    }
+  }, []);
+
+  const handleDownload = useCallback(async (url: string, name?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = name || 'image.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank');
+    }
+  }, []);
 
   const renderContent = () => {
     switch (message.type) {
@@ -37,9 +70,25 @@ export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, oth
                 className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
                 onClick={() => setShowPreview(false)}
               >
-                <button className="absolute top-4 right-4 text-white p-2" onClick={() => setShowPreview(false)}>
-                  <X className="h-6 w-6" />
-                </button>
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                  <button
+                    className="text-white/80 hover:text-white p-2 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); handleDownload(message.mediaUrl || '', message.mediaName); }}
+                    title="Download"
+                  >
+                    <Download className="h-6 w-6" />
+                  </button>
+                  <button
+                    className="text-white/80 hover:text-white p-2 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); handleShare(message.mediaUrl || '', message.mediaName); }}
+                    title="Share"
+                  >
+                    <Share2 className="h-6 w-6" />
+                  </button>
+                  <button className="text-white p-2" onClick={() => setShowPreview(false)}>
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
                 <img
                   src={message.mediaUrl}
                   alt="Preview"
@@ -158,4 +207,4 @@ export function MessageBubble({ message, isOwn, showAvatar, otherUserAvatar, oth
   );
 }
 
-import { Clock } from 'lucide-react';
+
